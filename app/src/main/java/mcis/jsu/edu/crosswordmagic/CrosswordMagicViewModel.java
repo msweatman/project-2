@@ -87,6 +87,7 @@ public class CrosswordMagicViewModel extends ViewModel {
         return puzzleWidth.getValue();
     }
 
+
     public int getWindowOverheadDp() {
         return windowOverheadDp.getValue();
     }
@@ -122,6 +123,8 @@ public class CrosswordMagicViewModel extends ViewModel {
         BufferedReader br = new BufferedReader(new InputStreamReader(context.getValue().getResources().openRawResource(id)));
         String line;
         String[] fields;
+        String key;
+
 
         HashMap<String, Word> wordMap = new HashMap<>();
         StringBuilder aString = new StringBuilder();
@@ -137,8 +140,27 @@ public class CrosswordMagicViewModel extends ViewModel {
             // Word object to the "wordMap" hash map; for the key names, use the box number
             // followed by the direction (for example, "16D" for Box # 16, Down).
 
-            puzzleHeight.setValue(15); // DELETE THIS!
-            puzzleWidth.setValue(15); // DELETE THIS!
+            while ((line = br.readLine().trim()) != null) {
+                fields = line.split("\t");
+
+                if(fields.length == Word.HEADER_FIELDS) {
+                    puzzleWidth.setValue(Integer.parseInt(fields[0]));
+                    puzzleHeight.setValue(Integer.parseInt(fields[1]));
+                }
+                else if(fields.length == Word.DATA_FIELDS) {
+                    Word w = new Word(fields);
+
+                    key = w.getBox() + w.getDirection();
+                    wordMap.put(key, w);
+                    if(w.isAcross()) {
+                        aString.append(w.getBox() + ": " + w.getClue() + "\n");
+                    }
+                    if(w.isDown()) {
+                        dString.append(w.getBox() + ": " + w.getClue() + "\n");
+                    }
+                }
+            }
+
 
         } catch (Exception e) {}
 
@@ -163,6 +185,21 @@ public class CrosswordMagicViewModel extends ViewModel {
 
             // INSERT YOUR CODE HERE
 
+            int row = w.getRow();
+            int col = w.getColumn();
+            String word = w.getWord();
+            String dir = w.getDirection();
+            aNumbers[row][col] = w.getBox();
+            for(int i = 0; i < word.length(); ++i) {
+                aLetters[row][col] = ' ';
+                if(dir.equals(Word.ACROSS)) {
+                    ++col;
+                }
+                else if(dir.equals(Word.DOWN)) {
+                    ++row;
+                }
+            }
+
         }
 
         this.letters.setValue(aLetters);
@@ -170,4 +207,30 @@ public class CrosswordMagicViewModel extends ViewModel {
 
     }
 
+    public Word getWord(String key){
+        return(words.getValue().get(key));
+    }
+
+    public void addWordToGrid(String key){
+        Character[][] updateLetters = letters.getValue();
+        Word w = (words.getValue().get(key));
+
+        int row = w. getRow();
+        int col = w.getColumn();
+        String word = w.getWord();
+        String dir = w.getDirection();
+
+        for(int i = 0; i < word.length(); i++) {
+            char c = word.charAt(i);
+            updateLetters[row][col] = c;
+            if(dir.equals(Word.ACROSS)){
+                ++col;
+
+            }
+
+            else if(dir.equals(Word.DOWN)){
+                ++row;
+            }
+        }
+    }
 }

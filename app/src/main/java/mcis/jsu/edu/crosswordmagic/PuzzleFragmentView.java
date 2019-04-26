@@ -1,17 +1,21 @@
 package mcis.jsu.edu.crosswordmagic;
 
+import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v7.widget.GridLayout;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import android.widget.*;
 
 import java.util.HashMap;
 
@@ -19,6 +23,9 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
 
     View root;
     private CrosswordMagicViewModel model;
+    private String userInput;
+    Toast message;
+
 
     public PuzzleFragmentView() {}
 
@@ -197,6 +204,42 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
 
     }
 
+    public void checkWord(int box){
+
+        boolean incorrect = false;
+
+        Word across = model.getWord(box + Word.ACROSS);
+        Word down = model.getWord(box + Word.DOWN);
+
+        if(across != null){
+
+            if(userInput.equals(across.getWord())) {
+                model.addWordToGrid(box + Word.ACROSS);
+                incorrect = false;
+            }
+
+            else
+                incorrect = true;
+        }
+
+        else if(down != null){
+
+
+            if(userInput.equals(down.getWord())) {
+                model.addWordToGrid(box + Word.DOWN);
+                incorrect = false;
+            }
+            else
+                incorrect = true;
+        }
+
+        if(incorrect) {
+            message = Toast.makeText(getContext(), "Incorrect guess", Toast.LENGTH_SHORT);
+            message.show();
+        }
+        updatePuzzleView();
+    }
+
     @Override
     public void onClick(View v) {
 
@@ -215,26 +258,44 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
         /* Get Box Numbers from Model */
 
         Integer[][] numbers = model.getNumbers();
-
-        /* Was a number clicked?  If so, display it in a Toast */
+        final int box = numbers[row][col];
 
         if (numbers[row][col] != 0) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(R.string.input_title);
+            builder.setMessage(R.string.input_text);
+            final EditText input = new EditText(getActivity());
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
 
-            Toast toast=Toast.makeText(getContext(), "You have just tapped Square " + numbers[row][col], Toast.LENGTH_SHORT);
-            toast.show();
+                public void onClick(DialogInterface d, int i) {
+                    userInput= input.getText().toString().toUpperCase();
+                    checkWord(box);
 
-            /* Add an "X" to Clicked Square */
+                }});
+            builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface d, int i) {
+                    userInput= "";
+                    d.cancel();
+                }
+            });
 
-            GridLayout squaresContainer = getActivity().findViewById(R.id.squaresContainer);
-            TextView element = (TextView) squaresContainer.getChildAt(index);
-            element.setText("X");
-
-            /* Update Grid Contents */
-
-            updatePuzzleView();
-
+            AlertDialog aboutDialog = builder.create();
+            aboutDialog.show();
         }
 
+        /* Add an "X" to Clicked Square */
+
+        GridLayout squaresContainer = getActivity().findViewById(R.id.squaresContainer);
+        TextView element = (TextView) squaresContainer.getChildAt(index);
+        element.setText("X");
+
+        /* Update Grid Contents */
+
+        updatePuzzleView();
     }
 
 }
